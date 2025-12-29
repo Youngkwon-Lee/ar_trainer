@@ -153,43 +153,82 @@ export function RehabProvider({ children }: { children: ReactNode }) {
             const isSquattingCurrent = squatDepth > 50;
             const actionLabel = isSquattingCurrent ? "SQUAT" : "STANDING";
 
-            // --- 3. View Detection ---
-            // Heuristic: Shoulder Width / Torso Height
-            // Front View: Wide shoulders (~0.6 - 1.0 ratio)
-            // Side View: Narrow shoulders (< 0.4 ratio)
-            const shoulderWidth = Math.abs(newLandmarks[11].x - newLandmarks[12].x);
-            const torsoHeight = Math.abs(newLandmarks[11].y - newLandmarks[23].y); // Shoulder to Hip
-            const viewRatio = shoulderWidth / (torsoHeight || 1); // Avoid NaN
+            // --- 3. View Detection (Advanced 3D) ---
+            // Use Z-axis differences to determine Body Yaw (Rotation)
+            const leftShoulder = newLandmarks[11];
+            const rightShoulder = newLandmarks[12];
+            const leftHip = newLandmarks[23];
+            const rightHip = newLandmarks[24];
 
-            const isFrontView = viewRatio > 0.35; // Tunable threshold
-            // const viewLabel = isFrontView ? "FRONT VIEW" : "SIDE VIEW";
+            // Average X, Z differences between Left/Right sides
+            const shoulderDx = Math.abs(leftShoulder.x - rightShoulder.x);
+            const shoulderDz = Math.abs(leftShoulder.z - rightShoulder.z);
+            const hipDx = Math.abs(leftHip.x - rightHip.x);
+            const hipDz = Math.abs(leftHip.z - rightHip.z);
 
-            // --- 4. Advanced Feedback ---
+            // Estimate Rotation Angle (Yaw) in degrees (0 = Front, 90 = Side)
+            // Using atan2 rough approximation given x, z are approx same scale in MediaPipe Normalized Landmarks
+            const shoulderYaw = Math.atan2(shoulderDz, shoulderDx) * (180 / Math.PI);
+            const hipYaw = Math.atan2(hipDz, hipDx) * (180 / Math.PI);
+
+            // Average Yaw
+            const bodyYaw = (shoulderYaw + hipYaw) / 2;
+
+            // Define "Safe Zones" for measurement to avoid Perspective Error
+            const isSafeFront = bodyYaw < 30; // 0-30 deg: Reliable for Width/Valgus checks
+            const isSafeSide = bodyYaw > 60;  // 60-90 deg: Reliable for Flexion/Lean checks
+            const isOblique = !isSafeFront && !isSafeSide; // 30-60 deg: DANGER ZONE (Perspective Distortion High)
+
+            // DEBUG: Log Yaw
+            // if (now - lastUpdateRef.current > 500) console.log(`Yaw: ${bodyYaw.toFixed(0)}° (${isSafeFront ? "FRONT" : isSafeSide ? "SIDE" : "OBLIQUE"})`);
+
+            // --- 4. Advanced Feedback with RELIABILITY GATING ---
             const feedbackMessages: string[] = [];
 
-            // A. Knee Valgus (FRONT VIEW ONLY)
-            if (isSquattingCurrent && isFrontView) {
+            // Only provide feedback if we are in a reliable view for that metric!
+
+            // A. Knee Valgus (Requires FRONT View)
+            // If we check this from the side, a regular squat looks like knees touching.
+            if (isSquattingCurrent && isSafeFront) {
                 const kneeDist = Math.abs(newLandmarks[25].x - newLandmarks[26].x);
                 const ankleDist = Math.abs(newLandmarks[27].x - newLandmarks[28].x);
-                if ((kneeDist / ankleDist) < 0.7) feedbackMessages.push("KNEES INWARD");
+                // Stricter threshold since we are confident it's front view
+                if ((kneeDist / ankleDist) < 0.65) feedbackMessages.push("KNEES INWARD");
             }
 
-            // B. Trunk Lean (SIDE VIEW PREFERRED, but Front acceptable if severe)
-            // Using Side View is strictly better for trunk angle.
+            // B. Trunk Lean (Preferred SIDE View, but accept Front if detectable)
             if (isSquattingCurrent) {
-                const shoulderY = (newLandmarks[11].y + newLandmarks[12].y) / 2;
-                const shoulderX = (newLandmarks[11].x + newLandmarks[12].x) / 2;
-                const midHipY = hipY;
-                const midHipX = (newLandmarks[23].x + newLandmarks[24].x) / 2;
-                const dx = shoulderX - midHipX;
-                const dy = shoulderY - midHipY;
-                const trunkAngle = Math.abs(Math.atan2(dx, -dy) * 180 / Math.PI);
+                // Calculation: Angle of Trunk Vector vs Vertical
+                const midShoulderX = (leftShoulder.x + rightShoulder.x) / 2;
+                const midShoulderY = (leftShoulder.y + rightShoulder.y) / 2;
+                const midHipX = (leftHip.x + rightHip.x) / 2;
+                const midHipY = (leftHip.y + rightHip.y) / 2;
 
-                // Stricter check for Side View
-                if (!isFrontView && trunkAngle > 30) feedbackMessages.push("CHEST FORWARD");
-                // Looser check for Front View (perspective foreshortening makes it hard)
-                else if (isFrontView && trunkAngle > 50) feedbackMessages.push("CHEST FORWARD");
+                const dx = midShoulderX - midHipX;
+                const dy = midShoulderY - midHipY; // dy is negative (shoulders above hips)
+
+                // Angle relative to vertical (0 = Upright)
+                const trunkAngle = Math.abs(Math.atan2(dx, -dy) * (180 / Math.PI));
+
+                if (isSafeSide) {
+                    // From Side: We can see leaning very clearly. 
+                    // Threshold: > 35 degrees is usually bad form
+                    if (trunkAngle > 35) feedbackMessages.push("CHEST FORWARD");
+                }
+                else if (isSafeFront) {
+                    // From Front: Leaning forward looks like "Shoulders dropping low" or "Short torso".
+                    // Foreshortening makes angles unstable. 
+                    // Only trigger if EXTREME lean is detected (to maximize Precision, minimize False Positives)
+                    // Or... maybe just DISABLE it for Front view to be safe?
+                    // Let's rely on a heuristic: If Torso Height (y-diff) shrinks too much relative to leg length?
+                    // For now, let's keep it disabled or very loose to avoid "Perspective Error" complaints.
+                    if (trunkAngle > 60) feedbackMessages.push("CHEST FORWARD"); // Very loose
+                }
             }
+
+            // Warn if in "DANGER ZONE" (Oblique Angle 30-60 deg) where measurements are trash?
+            // Optional: feedbackMessages.push("ROTATE TO FRONT OR SIDE"); 
+            // But this might be annoying. Let's purely "Gate" (Silence) bad metrics instead.
 
             // LOGIC: Update State Machine & Refs BEFORE setMetrics
             // Adjusted Thresholds: Stand < 65 (User avg ~53)
