@@ -153,23 +153,43 @@ export function RehabProvider({ children }: { children: ReactNode }) {
             const isSquattingCurrent = squatDepth > 50;
             const actionLabel = isSquattingCurrent ? "SQUAT" : "STANDING";
 
-            // --- 3. Advanced Feedback ---
+            // --- 3. View Detection ---
+            // Heuristic: Shoulder Width / Torso Height
+            // Front View: Wide shoulders (~0.6 - 1.0 ratio)
+            // Side View: Narrow shoulders (< 0.4 ratio)
+            const shoulderWidth = Math.abs(newLandmarks[11].x - newLandmarks[12].x);
+            const torsoHeight = Math.abs(newLandmarks[11].y - newLandmarks[23].y); // Shoulder to Hip
+            const viewRatio = shoulderWidth / (torsoHeight || 1); // Avoid NaN
+
+            const isFrontView = viewRatio > 0.35; // Tunable threshold
+            // const viewLabel = isFrontView ? "FRONT VIEW" : "SIDE VIEW";
+
+            // --- 4. Advanced Feedback ---
             const feedbackMessages: string[] = [];
 
-            // A. Knee Valgus
-            const kneeDist = Math.abs(newLandmarks[25].x - newLandmarks[26].x);
-            const ankleDist = Math.abs(newLandmarks[27].x - newLandmarks[28].x);
-            if (isSquattingCurrent && (kneeDist / ankleDist) < 0.7) feedbackMessages.push("KNEES INWARD");
+            // A. Knee Valgus (FRONT VIEW ONLY)
+            if (isSquattingCurrent && isFrontView) {
+                const kneeDist = Math.abs(newLandmarks[25].x - newLandmarks[26].x);
+                const ankleDist = Math.abs(newLandmarks[27].x - newLandmarks[28].x);
+                if ((kneeDist / ankleDist) < 0.7) feedbackMessages.push("KNEES INWARD");
+            }
 
-            // B. Trunk Lean
-            const shoulderY = (newLandmarks[11].y + newLandmarks[12].y) / 2;
-            const shoulderX = (newLandmarks[11].x + newLandmarks[12].x) / 2;
-            const midHipY = hipY;
-            const midHipX = (newLandmarks[23].x + newLandmarks[24].x) / 2;
-            const dx = shoulderX - midHipX;
-            const dy = shoulderY - midHipY;
-            const trunkAngle = Math.abs(Math.atan2(dx, -dy) * 180 / Math.PI);
-            if (isSquattingCurrent && trunkAngle > 45) feedbackMessages.push("CHEST FORWARD");
+            // B. Trunk Lean (SIDE VIEW PREFERRED, but Front acceptable if severe)
+            // Using Side View is strictly better for trunk angle.
+            if (isSquattingCurrent) {
+                const shoulderY = (newLandmarks[11].y + newLandmarks[12].y) / 2;
+                const shoulderX = (newLandmarks[11].x + newLandmarks[12].x) / 2;
+                const midHipY = hipY;
+                const midHipX = (newLandmarks[23].x + newLandmarks[24].x) / 2;
+                const dx = shoulderX - midHipX;
+                const dy = shoulderY - midHipY;
+                const trunkAngle = Math.abs(Math.atan2(dx, -dy) * 180 / Math.PI);
+
+                // Stricter check for Side View
+                if (!isFrontView && trunkAngle > 30) feedbackMessages.push("CHEST FORWARD");
+                // Looser check for Front View (perspective foreshortening makes it hard)
+                else if (isFrontView && trunkAngle > 50) feedbackMessages.push("CHEST FORWARD");
+            }
 
             // LOGIC: Update State Machine & Refs BEFORE setMetrics
             // Adjusted Thresholds: Stand < 65 (User avg ~53)
