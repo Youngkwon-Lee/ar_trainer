@@ -97,15 +97,30 @@ export default function Dashboard() {
             <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
               <Activity className="w-5 h-5 text-emerald-400" /> Recent Progress
             </h2>
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-              <div className="text-center text-slate-500 py-8">
-                <p>No recent activity recorded.</p>
-                <p className="text-sm mt-1">Complete your first session to see stats!</p>
+            {/* Section: Expert Zone (New) */}
+            <section>
+              <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                <Activity className="w-5 h-5 text-indigo-400" /> Lab & Expert Tools
+              </h2>
+              <div className="grid md:grid-cols-2 gap-6">
+                <Link href="/expert/annotation" className="group relative">
+                  <div className="relative h-full bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:-translate-y-1 hover:border-cyan-500/50 transition duration-300">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="text-lg font-bold text-cyan-400 mb-1">Lumbar Data Labeler</h3>
+                        <p className="text-slate-500 text-sm">Create Ground Truth datasets by manually tagging spinal points.</p>
+                      </div>
+                      <div className="bg-slate-800 p-2 rounded-lg text-cyan-400">
+                        <MousePointer2 className="w-5 h-5" />
+                      </div>
+                    </div>
+                  </div>
+                </Link>
               </div>
-            </div>
-          </section>
+            </section>
         </div>
       </div>
-    </main>
+    </div>
+    </main >
   );
 }
