@@ -70,19 +70,22 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* 3. Bench Press (Coming Soon) */}
-              <div className="relative h-full bg-slate-900/50 border border-slate-800 rounded-2xl p-6 opacity-60">
-                <div className="w-12 h-12 rounded-xl bg-slate-800 text-slate-500 flex items-center justify-center mb-4">
-                  <Activity className="w-6 h-6" />
+              {/* 3. Bench Press (Active) */}
+              <Link href="/exercise/bench" className="group relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl opacity-0 group-hover:opacity-100 blur transition duration-500" />
+                <div className="relative h-full bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:-translate-y-1 hover:border-blue-500/50 transition duration-300">
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center mb-4 group-hover:bg-blue-500 group-hover:text-white transition">
+                    <Activity className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Bench Press</h3>
+                  <p className="text-slate-400 text-sm mb-6">
+                    Upper body power. Track bar path, lock-out, and asymmetry.
+                  </p>
+                  <div className="flex items-center text-blue-400 text-sm font-medium">
+                    Start Session <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition" />
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold mb-2 text-slate-300">Bench Press</h3>
-                <p className="text-slate-500 text-sm mb-6">
-                  Upper body power. Track bar path, lock-out, and asymmetry.
-                </p>
-                <div className="flex items-center text-slate-600 text-sm font-medium">
-                  Coming Soon
-                </div>
-              </div>
+              </Link>
             </div>
           </section>
 

@@ -54,6 +54,7 @@ interface RehabContextType {
     registerCaptureFn: (fn: () => void) => void;
     captureSnapshot: () => void;
     startSession: () => void;
+    endSession: () => void; // Added missing method
     calibrate: (type: 'STANDING' | 'SQUAT') => void; // Keep simpler for now
     resetCalibration: () => void;
     calibrationData: { standingDiff: number; squatDiff: number } | null;
