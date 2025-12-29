@@ -6,18 +6,38 @@ import { X, Check, ArrowDown, ArrowUp, Ruler } from "lucide-react";
 
 export default function CalibrationModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
     const { calibrate, resetCalibration, calibrationData, metrics } = useRehab();
-    const [step, setStep] = useState<"INTRO" | "STAND" | "SQUAT" | "DONE">("INTRO");
+    const [countDown, setCountDown] = useState<number | null>(null);
 
     if (!isOpen) return null;
 
+    const startTimer = (onComplete: () => void) => {
+        let count = 5;
+        setCountDown(count);
+
+        const interval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                setCountDown(count);
+            } else {
+                clearInterval(interval);
+                setCountDown(null);
+                onComplete();
+            }
+        }, 1000);
+    };
+
     const handleStand = () => {
-        calibrate("STANDING");
-        setStep("SQUAT");
+        startTimer(() => {
+            calibrate("STANDING");
+            setStep("SQUAT");
+        });
     };
 
     const handleSquat = () => {
-        calibrate("SQUAT");
-        setStep("DONE");
+        startTimer(() => {
+            calibrate("SQUAT");
+            setStep("DONE");
+        });
     };
 
     const handleReset = () => {
@@ -27,11 +47,20 @@ export default function CalibrationModal({ isOpen, onClose }: { isOpen: boolean;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
+            {/* Countdown Overlay */}
+            {countDown !== null && (
+                <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+                    <span className="text-9xl font-black text-white animate-pulse">{countDown}</span>
+                    <p className="text-2xl text-slate-300 mt-4">Get into position!</p>
+                </div>
+            )}
+
             <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-6 relative">
                 {/* Close Button */}
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 text-slate-400 hover:text-white"
+                    disabled={countDown !== null}
                 >
                     <X className="w-6 h-6" />
                 </button>
@@ -69,14 +98,14 @@ export default function CalibrationModal({ isOpen, onClose }: { isOpen: boolean;
                             </div>
                             <h3 className="text-xl font-semibold text-white mb-2">Step 1: Stand Straight</h3>
                             <p className="text-slate-400 mb-6">
-                                Stand in a comfortable upright position. <br />
-                                Make sure the camera sees your full body.
+                                Press start, then you have <strong>5 seconds</strong> to step back and stand straight.
                             </p>
                             <button
                                 onClick={handleStand}
-                                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-lg transition"
+                                disabled={countDown !== null}
+                                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-lg transition disabled:opacity-50"
                             >
-                                Capture Standing Pose
+                                {countDown ? "Get Ready..." : "Start 5s Timer"}
                             </button>
                             <div className="mt-4 text-xs text-slate-500">
                                 Current Diff: {metrics.rawDiff.toFixed(3)}
@@ -91,14 +120,14 @@ export default function CalibrationModal({ isOpen, onClose }: { isOpen: boolean;
                             </div>
                             <h3 className="text-xl font-semibold text-white mb-2">Step 2: Squat Down</h3>
                             <p className="text-slate-400 mb-6">
-                                Squat down to your maximum comfortable depth. <br />
-                                Hold that position.
+                                Press start, then you have <strong>5 seconds</strong> to squat down and hold it.
                             </p>
                             <button
                                 onClick={handleSquat}
-                                className="w-full py-4 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold text-lg transition"
+                                disabled={countDown !== null}
+                                className="w-full py-4 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold text-lg transition disabled:opacity-50"
                             >
-                                Capture Squat Pose
+                                {countDown ? "Get Ready..." : "Start 5s Timer"}
                             </button>
                             <div className="mt-4 text-xs text-slate-500">
                                 Current Diff: {metrics.rawDiff.toFixed(3)}

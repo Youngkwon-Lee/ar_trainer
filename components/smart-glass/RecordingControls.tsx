@@ -124,6 +124,3 @@ export default function RecordingControls() {
         </div>
     );
 };
-        </div >
-    );
-};
