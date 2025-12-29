@@ -1,101 +1,105 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
-import { Activity, Heart, Battery, Wifi, Database } from "lucide-react";
-import { HUDContainer } from "@/components/smart-glass/HUDContainer";
-import { VideoFeed } from "@/components/smart-glass/VideoFeed";
-import { MovementAnalysis } from "@/components/smart-glass/MovementAnalysis";
-import { ActionClassification } from "@/components/smart-glass/ActionClassification";
-import { AQADisplay } from "@/components/smart-glass/AQADisplay";
-import RecordingControls from "@/components/smart-glass/RecordingControls";
-import RomGauge from "@/components/smart-glass/RomGauge";
-import { RehabProvider, useRehab } from "@/context/RehabContext";
+import Link from "next/link";
+import { Activity, Dumbbell, Zap, User, ArrowRight, Settings } from "lucide-react";
 
-function SmartGlassInterface() {
-  const { metrics } = useRehab();
-  const { countingState, reps } = metrics;
-
+export default function Dashboard() {
   return (
-    <main className="relative min-h-screen">
-      {/* Background Video Simulation */}
-      <VideoFeed />
+    <main className="min-h-screen bg-slate-950 text-white relative overflow-hidden">
+      {/* Background Gradients */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-[128px] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-600/10 rounded-full blur-[128px] pointer-events-none" />
 
-      {/* Main HUD Layer */}
-      <HUDContainer>
-        {/* Top Section: Action Info */}
-        <div className="flex justify-center pt-8">
-          <ActionClassification />
-        </div>
-
-        {/* Middle Section: Feedback Overlay */}
-        <div className="flex-1 flex flex-col items-center justify-center pointer-events-none">
-          {metrics.feedback.map((msg, i) => (
-            <div key={i} className="mb-2 bg-red-500/80 backdrop-blur-sm border border-red-400 px-6 py-2 rounded-full animate-bounce">
-              <span className="text-white font-bold tracking-widest uppercase text-xl shadow-black drop-shadow-md">
-                ⚠ {msg}
-              </span>
+      <div className="max-w-5xl mx-auto px-6 py-12 relative z-10">
+        {/* Header */}
+        <header className="flex items-center justify-between mb-16">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+              Smart Rehab Glass
+            </h1>
+            <p className="text-slate-400 text-sm mt-1">Welcome back, User</p>
+          </div>
+          <div className="flex gap-4">
+            <button className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition">
+              <Settings className="w-5 h-5" />
+            </button>
+            <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/30">
+              <User className="w-5 h-5" />
             </div>
-          ))}
-        </div>
-
-        {/* Bottom Section: Analytics & Stats */}
-        <div className="grid grid-cols-3 items-end gap-8 pb-8">
-          {/* Left: Graphs */}
-          <div className="flex flex-col gap-4">
-            <MovementAnalysis />
           </div>
+        </header>
 
-          {/* Center: AQA (Critical Info) */}
-          <div className="flex justify-center -translate-y-8">
-            <AQADisplay />
-          </div>
+        {/* Main Content */}
+        <div className="grid gap-10">
 
-          {/* Right Column: Metrics & Controls */}
-          <div className="flex flex-col gap-4">
-            {/* Metrics Panel */}
-            <div className="bg-slate-900/60 border border-slate-700 p-5 rounded-2xl backdrop-blur-md shadow-lg">
-              <h2 className="text-slate-400 text-sm font-semibold mb-3 uppercase tracking-wider flex items-center gap-2">
-                <Activity className="w-4 h-4" /> Real-time Analysis
-              </h2>
+          {/* Section: Today's Plan */}
+          <section>
+            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-amber-400" /> Suggested for You
+            </h2>
 
-              {/* ROM Gauge */}
-              <div className="flex justify-center mb-6 pt-2">
-                <RomGauge />
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Squat Card (Active) */}
+              <Link href="/exercise/squat" className="group relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl opacity-0 group-hover:opacity-100 blur transition duration-500" />
+                <div className="relative h-full bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:-translate-y-1 hover:border-indigo-500/50 transition duration-300">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-4 group-hover:bg-indigo-500 group-hover:text-white transition">
+                    <Dumbbell className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Squat Analysis</h3>
+                  <p className="text-slate-400 text-sm mb-6">
+                    Lower body strength & stability. Real-time knee valgus detection.
+                  </p>
+                  <div className="flex items-center text-indigo-400 text-sm font-medium">
+                    Start Session <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition" />
+                  </div>
+                </div>
+              </Link>
+
+              {/* Lunge Card (Coming Soon) */}
+              <div className="relative h-full bg-slate-900/50 border border-slate-800 rounded-2xl p-6 opacity-60">
+                <div className="w-12 h-12 rounded-xl bg-slate-800 text-slate-500 flex items-center justify-center mb-4">
+                  <Activity className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold mb-2 text-slate-300">Lunge & Balance</h3>
+                <p className="text-slate-500 text-sm mb-6">
+                  Unilateral leg training. Detects trunk lean and balance issues.
+                </p>
+                <div className="flex items-center text-slate-600 text-sm font-medium">
+                  Coming Soon
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
-                  <span className="text-slate-500 text-xs block mb-1">State</span>
-                  <span className={`text-lg font-bold ${countingState === "DOWN" ? "text-emerald-400" : "text-white"}`}>
-                    {countingState}
-                  </span>
+              {/* Side Raise Card (Coming Soon) */}
+              <div className="relative h-full bg-slate-900/50 border border-slate-800 rounded-2xl p-6 opacity-60">
+                <div className="w-12 h-12 rounded-xl bg-slate-800 text-slate-500 flex items-center justify-center mb-4">
+                  <Activity className="w-6 h-6" />
                 </div>
-                {/* Reps Visualization */}
-                <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 flex flex-col justify-between">
-                  <span className="text-slate-500 text-xs">Total Reps</span>
-                  <span className="text-3xl font-bold text-white self-end">{reps}</span>
+                <h3 className="text-xl font-bold mb-2 text-slate-300">Shoulder ROM</h3>
+                <p className="text-slate-500 text-sm mb-6">
+                  Range of motion tracking for frozen shoulder rehab.
+                </p>
+                <div className="flex items-center text-slate-600 text-sm font-medium">
+                  Coming Soon
                 </div>
               </div>
             </div>
+          </section>
 
-            {/* Recording & Session Controls */}
-            <div className="bg-slate-900/60 border border-slate-700 p-5 rounded-2xl backdrop-blur-md shadow-lg">
-              <h2 className="text-slate-400 text-sm font-semibold mb-3 uppercase tracking-wider flex items-center gap-2">
-                <Database className="w-4 h-4" /> Session Manager
-              </h2>
-              <RecordingControls />
+          {/* Section: Recent History (Placeholder) */}
+          <section>
+            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-emerald-400" /> Recent Progress
+            </h2>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <div className="text-center text-slate-500 py-8">
+                <p>No recent activity recorded.</p>
+                <p className="text-sm mt-1">Complete your first session to see stats!</p>
+              </div>
             </div>
-          </div>
+          </section>
         </div>
-      </HUDContainer>
+      </div>
     </main>
-  );
-}
-
-export default function Home() {
-  return (
-    <RehabProvider>
-      <SmartGlassInterface />
-    </RehabProvider>
   );
 }
