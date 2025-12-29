@@ -72,7 +72,6 @@ export function RehabProvider({ children }: { children: ReactNode }) {
         reps: 0,
         feedback: [],
         rawDiff: 0,
-        rawDiff: 0,
         countingState: "INIT",
         lastRepQuality: null,
         currentRepErrors: [],
@@ -230,125 +229,141 @@ export function RehabProvider({ children }: { children: ReactNode }) {
             // Optional: feedbackMessages.push("ROTATE TO FRONT OR SIDE"); 
             // But this might be annoying. Let's purely "Gate" (Silence) bad metrics instead.
 
-            // LOGIC: Update State Machine & Refs BEFORE setMetrics
-            // Adjusted Thresholds: Stand < 65 (User avg ~53)
-            let increment = 0;
-            let currentCountingState = wasSquattingRef.current ? "DOWN" : "UP";
-            let lastRepQuality = prev.lastRepQuality; // Persist previous quality
-            const newFeedback = [...feedbackMessages]; // Current frame feedback
+            // LOGIC: Functional State Update to access 'prev' reliably
+            setMetrics(prev => {
+                // Calculate View Detection (Advanced 3D) here or pass it in? 
+                // We calculated it above. It's constant for this frame.
 
-            if (!wasSquattingRef.current && squatDepth > 65) {
-                // START SQUAT (DOWN)
-                wasSquattingRef.current = true;
-                currentCountingState = "DOWN";
-                // Reset error tracking for this new rep
-                prev.currentRepErrors = [];
-            } else if (wasSquattingRef.current && squatDepth < 65) {
-                // FINISH SQUAT (UP) -> Count Rep
-                wasSquattingRef.current = false;
-                currentCountingState = "UP";
-                increment = 1;
+                let increment = 0;
+                let currentCountingState = prev.countingState;
+                let lastRepQuality = prev.lastRepQuality;
+                // Create a COPY of the previous errors to mutate locally before returning
+                let currentRepErrors = [...prev.currentRepErrors];
+                const newFeedback = [...feedbackMessages];
 
-                // Determine Quality
-                const hadErrors = prev.currentRepErrors.length > 0;
-                lastRepQuality = hadErrors ? "BAD" : "GOOD";
+                // State Machine Transition
+                const wasDown = prev.countingState === "DOWN";
+                const isSquatDeep = squatDepth > 65;
+                const isStandTall = squatDepth < 65;
 
-                // Show Result Feedback (Temporary Override)
-                if (!hadErrors) {
-                    newFeedback.push("PERFECT FORM! ⭐");
-                } else {
-                    newFeedback.push("WATCH FORM ⚠️");
+                // 1. Transition to DOWN
+                if (!wasDown && isSquatDeep) {
+                    currentCountingState = "DOWN";
+                    currentRepErrors = []; // Reset errors for new rep
+                    wasSquattingRef.current = true; // Keep ref in sync for other effects (if any)
                 }
-            }
+                // 2. Transition to UP (Complete Rep)
+                else if (wasDown && isStandTall) {
+                    currentCountingState = "UP";
+                    increment = 1;
+                    wasSquattingRef.current = false;
 
-            // Accomulate Errors during DOWN state
-            if (wasSquattingRef.current) {
-                feedbackMessages.forEach(msg => {
-                    if (!prev.currentRepErrors.includes(msg)) prev.currentRepErrors.push(msg);
-                });
-            }
+                    // Determine Quality based on errors accumulated during the rep
+                    const hadErrors = currentRepErrors.length > 0;
+                    lastRepQuality = hadErrors ? "BAD" : "GOOD";
 
-            // SINGLE State Update
-            setMetrics(prev => ({
-                kneeFlexionLeft: leftKneeAngle,
-                kneeFlexionRight: rightKneeAngle,
-                squatDepth,
-                isGoodForm: feedbackMessages.length === 0,
-                actionLabel,
-                reps: prev.reps + increment,
-                feedback: newFeedback,
-                rawDiff: diff,
-                countingState: currentCountingState,
-                isSessionActive: prev.isSessionActive,
-                lastRepQuality: lastRepQuality, // Expose quality
-                currentRepErrors: prev.currentRepErrors, // Persist errors for this rep
-                sessionStats: {
-                    ...prev.sessionStats,
-                    maxSquatDepth: prev.isSessionActive ? Math.max(prev.sessionStats.maxSquatDepth, squatDepth) : prev.sessionStats.maxSquatDepth,
-                    totalReps: prev.isSessionActive ? prev.reps + increment : prev.reps
+                    // Add result feedback to THIS frame's feedback
+                    if (!hadErrors) {
+                        newFeedback.push("PERFECT FORM! ⭐");
+                    } else {
+                        newFeedback.push("WATCH FORM ⚠️");
+                    }
                 }
-            }));
+
+                // Accumulate Errors during DOWN state
+                // This runs every frame we are in DOWN state
+                if (currentCountingState === "DOWN") {
+                    feedbackMessages.forEach(msg => {
+                        if (!currentRepErrors.includes(msg)) {
+                            currentRepErrors.push(msg);
+                        }
+                    });
+                }
+
+                // Return new state
+                return {
+                    kneeFlexionLeft: leftKneeAngle,
+                    kneeFlexionRight: rightKneeAngle,
+                    squatDepth,
+                    isGoodForm: feedbackMessages.length === 0,
+                    actionLabel,
+                    reps: prev.reps + increment,
+                    feedback: newFeedback,
+                    rawDiff: diff,
+                    countingState: currentCountingState,
+                    isSessionActive: prev.isSessionActive,
+                    lastRepQuality: lastRepQuality,
+                    currentRepErrors: currentRepErrors,
+                    sessionStats: {
+                        ...prev.sessionStats,
+                        maxSquatDepth: prev.isSessionActive ? Math.max(prev.sessionStats.maxSquatDepth, squatDepth) : prev.sessionStats.maxSquatDepth,
+                        totalReps: prev.isSessionActive ? prev.reps + increment : prev.reps
+                    }
+                };
+            });
         }
     }, [calibrationData]); // Re-create if calibration changes
+}
+    }, [calibrationData]); // Re-create if calibration changes
 
-    const registerCaptureFn = useCallback((fn: () => void) => {
-        captureFnRef.current = fn;
-    }, []);
+const registerCaptureFn = useCallback((fn: () => void) => {
+    captureFnRef.current = fn;
+}, []);
 
-    const captureSnapshot = useCallback(() => {
-        if (captureFnRef.current) captureFnRef.current();
-    }, []);
+const captureSnapshot = useCallback(() => {
+    if (captureFnRef.current) captureFnRef.current();
+}, []);
 
-    const startSession = useCallback(() => {
-        setMetrics(prev => ({
-            ...prev,
-            reps: 0, // Reset Reps
-            isSessionActive: true,
-            sessionStats: {
-                maxSquatDepth: 0,
-                minSquatDepth: 100, // Start high
-                totalReps: 0,
-                startTime: Date.now(),
-                endTime: null,
-                romHistory: []
-            }
-        }));
-    }, []);
+const startSession = useCallback(() => {
+    setMetrics(prev => ({
+        ...prev,
+        reps: 0, // Reset Reps
+        isSessionActive: true,
+        sessionStats: {
+            maxSquatDepth: 0,
+            minSquatDepth: 100, // Start high
+            totalReps: 0,
+            startTime: Date.now(),
+            endTime: null,
+            romHistory: []
+        }
+    }));
+}, []);
 
-    const endSession = useCallback(() => {
-        setMetrics(prev => ({
-            ...prev,
-            isSessionActive: false,
-            sessionStats: {
-                ...prev.sessionStats,
-                endTime: Date.now(),
-                totalReps: prev.reps // Save final reps
-            }
-        }));
-    }, []);
+const endSession = useCallback(() => {
+    setMetrics(prev => ({
+        ...prev,
+        isSessionActive: false,
+        sessionStats: {
+            ...prev.sessionStats,
+            endTime: Date.now(),
+            totalReps: prev.reps // Save final reps
+        }
+    }));
+}, []);
 
-    // Calibration Function
-    const calibrate = useCallback((type: 'STANDING' | 'SQUAT') => {
-        const currentVal = currentDiffRef.current;
-        console.log(`Calibrating ${type}: ${currentVal}`);
-        setCalibrationData(prev => {
-            if (type === 'STANDING') {
-                return { standingDiff: currentVal, squatDiff: prev ? prev.squatDiff : currentVal - 0.2 }; // Default range if no squat yet
-            } else {
-                return { standingDiff: prev ? prev.standingDiff : currentVal + 0.2, squatDiff: currentVal };
-            }
-        });
-    }, []);
+// Calibration Function
+const calibrate = useCallback((type: 'STANDING' | 'SQUAT') => {
+    const currentVal = currentDiffRef.current;
+    console.log(`Calibrating ${type}: ${currentVal}`);
+    setCalibrationData(prev => {
+        if (type === 'STANDING') {
+            return { standingDiff: currentVal, squatDiff: prev ? prev.squatDiff : currentVal - 0.2 }; // Default range if no squat yet
+        } else {
+            return { standingDiff: prev ? prev.standingDiff : currentVal + 0.2, squatDiff: currentVal };
+        }
+    });
+}, []);
 
-    const resetCalibration = useCallback(() => {
-        setCalibrationData(null);
-    }, []);
+const resetCalibration = useCallback(() => {
+    setCalibrationData(null);
+}, []);
 
-    return (
-        <RehabContext.Provider value={{ landmarks, metrics, setPoseData, registerCaptureFn, captureSnapshot, startSession, endSession, calibrate, resetCalibration, calibrationData }}>
-            {children}
-        </RehabContext.Provider>
-    );
+return (
+    <RehabContext.Provider value={{ landmarks, metrics, setPoseData, registerCaptureFn, captureSnapshot, startSession, endSession, calibrate, resetCalibration, calibrationData }}>
+        {children}
+    </RehabContext.Provider>
+);
 }
 
 export function useRehab() {
