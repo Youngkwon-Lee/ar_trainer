@@ -130,17 +130,33 @@ export default function CameraLogic() {
     useEffect(() => {
         if (!scriptLoaded) return;
 
-        // Initialize Video (No Webcam)
-        if (videoRef.current) {
-            // User provided test video
-            videoRef.current.src = "/test-video.mp4";
-            videoRef.current.crossOrigin = "anonymous";
-            videoRef.current.play().then(() => {
-                setCameraActive(true);
-            }).catch(err => {
-                console.error("Video play error:", err);
-            });
-        }
+        // Initialize Webcam
+        const startCamera = async () => {
+            if (!videoRef.current) return;
+
+            try {
+                // Request camera (Prefer rear camera for AR feel)
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "environment", // Use rear camera if available
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                });
+
+                videoRef.current.srcObject = stream;
+                videoRef.current.onloadedmetadata = () => {
+                    videoRef.current?.play();
+                    setCameraActive(true);
+                };
+            } catch (err) {
+                console.error("Camera Error:", err);
+                alert("Camera access denied or not available. Please allow camera permissions.");
+            }
+        };
+
+        startCamera();
 
         // Initialize Pose
         // @ts-ignore

@@ -1,7 +1,6 @@
 "use client";
 
 import { useRehab } from "@/context/RehabContext";
-import { useEffect, useState } from "react";
 import { X, Download, Activity, Clock, Trophy } from "lucide-react";
 
 export default function ReportModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
@@ -18,6 +17,33 @@ export default function ReportModal({ isOpen, onClose }: { isOpen: boolean; onCl
         const m = Math.floor(secs / 60);
         const s = secs % 60;
         return `${m}:${s.toString().padStart(2, '0')}`;
+    };
+
+    const handleSaveReport = () => {
+        const reportData = {
+            sessionId: `SES-${Date.now()}`,
+            patientId: "PID-MOCK-001", // Placeholder
+            timestamp: new Date().toISOString(),
+            stats: {
+                totalReps: sessionStats.totalReps,
+                maxSquatDepth: sessionStats.maxSquatDepth,
+                durationSeconds: durationSeconds,
+                startTime: sessionStats.startTime,
+                endTime: sessionStats.endTime
+            },
+            romHistory: sessionStats.romHistory
+        };
+
+        const jsonString = JSON.stringify(reportData, null, 2);
+        const blob = new Blob([jsonString], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `rehab_session_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     };
 
     return (
@@ -68,9 +94,9 @@ export default function ReportModal({ isOpen, onClose }: { isOpen: boolean; onCl
                     </button>
                     <button
                         className="flex-1 py-3 px-4 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-                        onClick={() => alert("Save to EMR Feature Coming Soon!")}
+                        onClick={handleSaveReport}
                     >
-                        <Download className="w-4 h-4" /> Save Report
+                        <Download className="w-4 h-4" /> Save JSON
                     </button>
                 </div>
             </div>
