@@ -35,49 +35,49 @@ export default function Dashboard() {
           {/* Section: Today's Plan */}
           <section>
             <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-amber-400" /> Suggested for You
+              <Zap className="w-5 h-5 text-amber-400" /> The Big 3 Routine
             </h2>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Squat Card (Active) */}
+              {/* 1. Squat (Active) */}
               <Link href="/exercise/squat" className="group relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl opacity-0 group-hover:opacity-100 blur transition duration-500" />
                 <div className="relative h-full bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:-translate-y-1 hover:border-indigo-500/50 transition duration-300">
                   <div className="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-4 group-hover:bg-indigo-500 group-hover:text-white transition">
                     <Dumbbell className="w-6 h-6" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Squat Analysis</h3>
+                  <h3 className="text-xl font-bold mb-2">Squat</h3>
                   <p className="text-slate-400 text-sm mb-6">
-                    Lower body strength & stability. Real-time knee valgus detection.
+                    Lower body compound. Tracks depth, knee valgus, and trunk lean.
                   </p>
                   <div className="flex items-center text-indigo-400 text-sm font-medium">
-                    Start Session <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition" />
+                    Start <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition" />
                   </div>
                 </div>
               </Link>
 
-              {/* Lunge Card (Coming Soon) */}
+              {/* 2. Deadlift (Coming Soon) */}
               <div className="relative h-full bg-slate-900/50 border border-slate-800 rounded-2xl p-6 opacity-60">
                 <div className="w-12 h-12 rounded-xl bg-slate-800 text-slate-500 flex items-center justify-center mb-4">
                   <Activity className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-2 text-slate-300">Lunge & Balance</h3>
+                <h3 className="text-xl font-bold mb-2 text-slate-300">Deadlift</h3>
                 <p className="text-slate-500 text-sm mb-6">
-                  Unilateral leg training. Detects trunk lean and balance issues.
+                  Posterior chain. Monitor back rounding (cat-back) and hip hinge.
                 </p>
                 <div className="flex items-center text-slate-600 text-sm font-medium">
                   Coming Soon
                 </div>
               </div>
 
-              {/* Side Raise Card (Coming Soon) */}
+              {/* 3. Bench Press (Coming Soon) */}
               <div className="relative h-full bg-slate-900/50 border border-slate-800 rounded-2xl p-6 opacity-60">
                 <div className="w-12 h-12 rounded-xl bg-slate-800 text-slate-500 flex items-center justify-center mb-4">
                   <Activity className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-2 text-slate-300">Shoulder ROM</h3>
+                <h3 className="text-xl font-bold mb-2 text-slate-300">Bench Press</h3>
                 <p className="text-slate-500 text-sm mb-6">
-                  Range of motion tracking for frozen shoulder rehab.
+                  Upper body power. Track bar path, lock-out, and asymmetry.
                 </p>
                 <div className="flex items-center text-slate-600 text-sm font-medium">
                   Coming Soon

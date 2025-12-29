@@ -298,72 +298,68 @@ export function RehabProvider({ children }: { children: ReactNode }) {
                         ...prev.sessionStats,
                         maxSquatDepth: prev.isSessionActive ? Math.max(prev.sessionStats.maxSquatDepth, squatDepth) : prev.sessionStats.maxSquatDepth,
                         totalReps: prev.isSessionActive ? prev.reps + increment : prev.reps
-                    }
-                };
-            });
+                    });
         }
     }, [calibrationData]); // Re-create if calibration changes
-}
-    }, [calibrationData]); // Re-create if calibration changes
 
-const registerCaptureFn = useCallback((fn: () => void) => {
-    captureFnRef.current = fn;
-}, []);
+    const registerCaptureFn = useCallback((fn: () => void) => {
+        captureFnRef.current = fn;
+    }, []);
 
-const captureSnapshot = useCallback(() => {
-    if (captureFnRef.current) captureFnRef.current();
-}, []);
+    const captureSnapshot = useCallback(() => {
+        if (captureFnRef.current) captureFnRef.current();
+    }, []);
 
-const startSession = useCallback(() => {
-    setMetrics(prev => ({
-        ...prev,
-        reps: 0, // Reset Reps
-        isSessionActive: true,
-        sessionStats: {
-            maxSquatDepth: 0,
-            minSquatDepth: 100, // Start high
-            totalReps: 0,
-            startTime: Date.now(),
-            endTime: null,
-            romHistory: []
-        }
-    }));
-}, []);
+    const startSession = useCallback(() => {
+        setMetrics(prev => ({
+            ...prev,
+            reps: 0, // Reset Reps
+            isSessionActive: true,
+            sessionStats: {
+                maxSquatDepth: 0,
+                minSquatDepth: 100, // Start high
+                totalReps: 0,
+                startTime: Date.now(),
+                endTime: null,
+                romHistory: []
+            }
+        }));
+    }, []);
 
-const endSession = useCallback(() => {
-    setMetrics(prev => ({
-        ...prev,
-        isSessionActive: false,
-        sessionStats: {
-            ...prev.sessionStats,
-            endTime: Date.now(),
-            totalReps: prev.reps // Save final reps
-        }
-    }));
-}, []);
+    const endSession = useCallback(() => {
+        setMetrics(prev => ({
+            ...prev,
+            isSessionActive: false,
+            sessionStats: {
+                ...prev.sessionStats,
+                endTime: Date.now(),
+                totalReps: prev.reps // Save final reps
+            }
+        }));
+    }, []);
 
-// Calibration Function
-const calibrate = useCallback((type: 'STANDING' | 'SQUAT') => {
-    const currentVal = currentDiffRef.current;
-    console.log(`Calibrating ${type}: ${currentVal}`);
-    setCalibrationData(prev => {
-        if (type === 'STANDING') {
-            return { standingDiff: currentVal, squatDiff: prev ? prev.squatDiff : currentVal - 0.2 }; // Default range if no squat yet
-        } else {
-            return { standingDiff: prev ? prev.standingDiff : currentVal + 0.2, squatDiff: currentVal };
-        }
-    });
-}, []);
+    // Calibration Function
+    const calibrate = useCallback((type: 'STANDING' | 'SQUAT') => {
+        const currentVal = currentDiffRef.current;
+        console.log(`Calibrating ${type}: ${currentVal}`);
+        setCalibrationData(prev => {
+            if (type === 'STANDING') {
+                return { standingDiff: currentVal, squatDiff: prev ? prev.squatDiff : currentVal - 0.2 }; // Default range if no squat yet
+            } else {
+                return { standingDiff: prev ? prev.standingDiff : currentVal + 0.2, squatDiff: currentVal };
+            }
+        });
+    }, []);
 
-const resetCalibration = useCallback(() => {
-    setCalibrationData(null);
-}, []);
+    const resetCalibration = useCallback(() => {
+        setCalibrationData(null);
+    }, []);
 
-return (
-    <RehabContext.Provider value={{ landmarks, metrics, setPoseData, registerCaptureFn, captureSnapshot, startSession, endSession, calibrate, resetCalibration, calibrationData }}>
-        {children}
-    </RehabContext.Provider>
-);
+    return (
+        <RehabContext.Provider value={{ landmarks, metrics, setPoseData, registerCaptureFn, captureSnapshot, startSession, endSession, calibrate, resetCalibration, calibrationData }}>
+            {children}
+        </RehabContext.Provider>
+    );
 }
 
 export function useRehab() {
