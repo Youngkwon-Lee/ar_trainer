@@ -202,6 +202,9 @@ export function RehabProvider({ children, exercise = 'SQUAT' }: { children: Reac
                         squatDepth,
                         elbowExtensionLeft: 180, // Reset/default for squat
                         elbowExtensionRight: 180, // Reset/default for squat
+                        trunkAngle: 180, // Reset/default for squat
+                        hipHingeDepth: 0, // Reset/default for squat
+                        barbellPath: 0, // Reset/default for squat
                         isGoodForm: feedbackMessages.length === 0,
                         actionLabel,
                         reps: prev.reps + increment,

@@ -43,54 +43,54 @@ function DeadliftHUD() {
                     <div className="flex flex-col gap-4">
                         <div className="bg-slate-900/60 border border-slate-700 p-4 rounded-xl backdrop-blur-md">
                             <h3 className="text-slate-400 text-xs font-semibold uppercase mb-2 flex items-center gap-2">
-                                <Info className="w-3 h-3" /> RDL Tips
+                                <Info className="w-3 h-3" /> RDL Safety
                             </h3>
                             <ul className="text-slate-300 text-xs space-y-1">
-                                <li>1. Hinge at hips (Push butt back)</li>
-                                <li>2. Keep back neutral (No rounding)</li>
-                                <li>3. Soft knees, don't squat</li>
+                                <li>1. <span className="text-amber-400">Push Hips Back</span> (Don't just bend)</li>
+                                <li>2. Keep Bar touching legs</li>
+                                <li>3. Chin tucked, Chest up</li>
                             </ul>
-                        </div>
-                    </div>
+                        </div>        </div>
+                </div>
 
-                    {/* Center: Angle Gauge */}
-                    <div className="flex justify-center -translate-y-8">
-                        <div className="bg-black/60 backdrop-blur-md border border-amber-500/30 rounded-full px-6 py-6 flex flex-col items-center w-40 h-40 justify-center relative">
-                            <span className="text-slate-400 text-[10px] uppercase tracking-widest absolute top-6">Hip Hinge</span>
-                            <span className="text-4xl font-bold text-white">{trunkAngle.toFixed(0)}°</span>
-                            <div className="w-full bg-slate-700 h-1 mt-2 rounded-full overflow-hidden">
-                                <div
-                                    className="bg-amber-500 h-full transition-all duration-300"
-                                    style={{ width: `${Math.min(100, (trunkAngle / 90) * 100)}%` }} // 90 deg = full bar
-                                />
-                            </div>
+                {/* Center: Angle Gauge */}
+                <div className="flex justify-center -translate-y-8">
+                    <div className="bg-black/60 backdrop-blur-md border border-amber-500/30 rounded-full px-6 py-6 flex flex-col items-center w-40 h-40 justify-center relative">
+                        <span className="text-slate-400 text-[10px] uppercase tracking-widest absolute top-6">Hip Hinge</span>
+                        <span className="text-4xl font-bold text-white">{trunkAngle.toFixed(0)}°</span>
+                        <div className="w-full bg-slate-700 h-1 mt-2 rounded-full overflow-hidden">
+                            <div
+                                className="bg-amber-500 h-full transition-all duration-300"
+                                style={{ width: `${Math.min(100, (trunkAngle / 90) * 100)}%` }} // 90 deg = full bar
+                            />
                         </div>
-                    </div>
-
-                    {/* Right: Metrics */}
-                    <div className="flex flex-col gap-4">
-                        <div className="bg-slate-900/60 border border-slate-700 p-5 rounded-2xl backdrop-blur-md shadow-lg">
-                            <h2 className="text-slate-400 text-sm font-semibold mb-3 uppercase tracking-wider flex items-center gap-2">
-                                <Activity className="w-4 h-4" /> Joint Angles
-                            </h2>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
-                                    <span className="text-slate-500 text-xs block mb-1">Knee Bend</span>
-                                    <span className={`text-lg font-mono font-bold ${kneeAngle < 140 ? 'text-red-400' : 'text-emerald-400'}`}>
-                                        {kneeAngle.toFixed(0)}°
-                                    </span>
-                                </div>
-                                <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 flex flex-col justify-between">
-                                    <span className="text-slate-500 text-xs">Reps</span>
-                                    <span className="text-3xl font-bold text-white self-end">{reps}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <RecordingControls />
                     </div>
                 </div>
-            </HUDContainer>
-        </main>
+
+                {/* Right: Metrics */}
+                <div className="flex flex-col gap-4">
+                    <div className="bg-slate-900/60 border border-slate-700 p-5 rounded-2xl backdrop-blur-md shadow-lg">
+                        <h2 className="text-slate-400 text-sm font-semibold mb-3 uppercase tracking-wider flex items-center gap-2">
+                            <Activity className="w-4 h-4" /> Joint Angles
+                        </h2>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
+                                <span className="text-slate-500 text-xs block mb-1">Knee Bend</span>
+                                <span className={`text-lg font-mono font-bold ${kneeAngle < 140 ? 'text-red-400' : 'text-emerald-400'}`}>
+                                    {kneeAngle.toFixed(0)}°
+                                </span>
+                            </div>
+                            <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 flex flex-col justify-between">
+                                <span className="text-slate-500 text-xs">Reps</span>
+                                <span className="text-3xl font-bold text-white self-end">{reps}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <RecordingControls />
+                </div>
+            </div>
+        </HUDContainer>
+        </main >
     );
 }
 
