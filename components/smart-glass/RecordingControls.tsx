@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Camera, Mic, Square, Play, BarChart2 } from "lucide-react";
+import { Camera, Mic, Square, Play, BarChart2, Settings } from "lucide-react";
 import { useRehab } from "@/context/RehabContext";
 import ReportModal from "./ReportModal";
+import CalibrationModal from "./CalibrationModal";
 
 export default function RecordingControls() {
     const { captureSnapshot, startSession, endSession, metrics } = useRehab();
@@ -16,6 +17,7 @@ export default function RecordingControls() {
 
     // Report Logic
     const [showReport, setShowReport] = useState(false);
+    const [showCalibration, setShowCalibration] = useState(false);
 
     // Audio Logic
     const toggleRecording = async () => {
@@ -69,8 +71,8 @@ export default function RecordingControls() {
             <button
                 onClick={handleSessionToggle}
                 className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-lg shadow-lg transition-all ${isSessionActive
-                        ? "bg-red-500/20 text-red-400 border border-red-500 hover:bg-red-500/30"
-                        : "bg-emerald-500 text-white hover:bg-emerald-400 border border-emerald-400 hover:scale-[1.02]"
+                    ? "bg-red-500/20 text-red-400 border border-red-500 hover:bg-red-500/30"
+                    : "bg-emerald-500 text-white hover:bg-emerald-400 border border-emerald-400 hover:scale-[1.02]"
                     }`}
             >
                 {isSessionActive ? (
@@ -97,8 +99,8 @@ export default function RecordingControls() {
                 <button
                     onClick={toggleRecording}
                     className={`flex flex-col items-center justify-center p-4 border rounded-xl transition-all active:scale-95 group ${isRecording
-                            ? "bg-red-500/20 border-red-500 animate-pulse"
-                            : "bg-slate-800/60 border-slate-600 hover:bg-slate-700"
+                        ? "bg-red-500/20 border-red-500 animate-pulse"
+                        : "bg-slate-800/60 border-slate-600 hover:bg-slate-700"
                         }`}
                 >
                     <Mic className={`w-6 h-6 mb-1 transition-transform ${isRecording ? "text-red-500 scale-110" : "text-amber-400 group-hover:scale-110"}`} />
@@ -108,8 +110,20 @@ export default function RecordingControls() {
                 </button>
             </div>
 
-            {/* Modal */}
+            {/* Settings / Calibration Link */}
+            <button
+                onClick={() => setShowCalibration(true)}
+                className="w-full py-3 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+            >
+                <Settings className="w-4 h-4" /> Calibrate Body (AI Tune)
+            </button>
+
+            {/* Modals */}
             <ReportModal isOpen={showReport} onClose={() => setShowReport(false)} />
+            <CalibrationModal isOpen={showCalibration} onClose={() => setShowCalibration(false)} />
         </div>
+    );
+};
+        </div >
     );
 };

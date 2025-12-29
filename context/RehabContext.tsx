@@ -43,7 +43,9 @@ interface RehabContextType {
     registerCaptureFn: (fn: () => void) => void;
     captureSnapshot: () => void;
     startSession: () => void;
-    endSession: () => void;
+    calibrate: (type: 'STANDING' | 'SQUAT') => void;
+    resetCalibration: () => void;
+    calibrationData: { standingDiff: number; squatDiff: number } | null;
 }
 
 const RehabContext = createContext<RehabContextType | undefined>(undefined);
@@ -84,6 +86,14 @@ export function RehabProvider({ children }: { children: ReactNode }) {
     const wasSquattingRef = useRef(false);
     const lastUpdateRef = useRef(0);
 
+    // Calibration State
+    const [calibrationData, setCalibrationData] = useState<{ standingDiff: number; squatDiff: number } | null>(null);
+
+    // Helper to calculate diff (Moved out or duplicated for access)
+    // Actually, let's keep it inside setPoseData where it computes diff. 
+    // We need a way to capture the CURRENT diff when calibrate is called.
+    const currentDiffRef = useRef<number>(0);
+
     // Optimize: Wrap in useCallback to prevent consumer re-renders
     const setPoseData = useCallback((newLandmarks: Landmark[]) => {
         // PERF FIX: Do NOT update state with raw landmarks on every frame (60fps). 
@@ -92,6 +102,14 @@ export function RehabProvider({ children }: { children: ReactNode }) {
         // setLandmarks(newLandmarks); 
 
         const now = Date.now();
+
+        // Calculate diff always for calibration reference
+        if (newLandmarks.length > 28) {
+            const hipY = (newLandmarks[23].y + newLandmarks[24].y) / 2;
+            const kneeY = (newLandmarks[25].y + newLandmarks[26].y) / 2;
+            currentDiffRef.current = kneeY - hipY;
+        }
+
         // Throttle METRICS updates to ~100ms (10fps) prevents "Maximum update depth"
         // while allowing smooth visual overlay.
         if (now - lastUpdateRef.current < 100) return;
@@ -107,7 +125,20 @@ export function RehabProvider({ children }: { children: ReactNode }) {
 
             // Normalize
             const diff = kneeY - hipY;
-            let squatDepth = (0.3 - diff) * (100 / 0.3);
+
+            // DYNAMIC THRESHOLD LOGIC
+            let squatDepth = 0;
+            if (calibrationData) {
+                // Map current diff between standing (0%) and squat (100%)
+                const range = calibrationData.squatDiff - calibrationData.standingDiff;
+                // Avoid divide by zero
+                if (Math.abs(range) > 0.05) {
+                    squatDepth = ((diff - calibrationData.standingDiff) / range) * 100;
+                }
+            } else {
+                // Fallback to default
+                squatDepth = (0.3 - diff) * (100 / 0.3);
+            }
             squatDepth = Math.max(0, Math.min(100, squatDepth));
 
             // DEBUG: Log values to console
@@ -165,13 +196,11 @@ export function RehabProvider({ children }: { children: ReactNode }) {
                 sessionStats: {
                     ...prev.sessionStats,
                     maxSquatDepth: prev.isSessionActive ? Math.max(prev.sessionStats.maxSquatDepth, squatDepth) : prev.sessionStats.maxSquatDepth,
-                    totalReps: prev.isSessionActive ? prev.reps + increment : prev.reps // Actually, let's decouple session reps from total global reps? 
-                    // For now, let's just tracking global reps is fine, or reset reps on session start?
-                    // User probably wants to start fresh count on session start.
+                    totalReps: prev.isSessionActive ? prev.reps + increment : prev.reps
                 }
             }));
         }
-    }, []);
+    }, [calibrationData]); // Re-create if calibration changes
 
     const registerCaptureFn = useCallback((fn: () => void) => {
         captureFnRef.current = fn;
@@ -209,8 +238,25 @@ export function RehabProvider({ children }: { children: ReactNode }) {
         }));
     }, []);
 
+    // Calibration Function
+    const calibrate = useCallback((type: 'STANDING' | 'SQUAT') => {
+        const currentVal = currentDiffRef.current;
+        console.log(`Calibrating ${type}: ${currentVal}`);
+        setCalibrationData(prev => {
+            if (type === 'STANDING') {
+                return { standingDiff: currentVal, squatDiff: prev ? prev.squatDiff : currentVal - 0.2 }; // Default range if no squat yet
+            } else {
+                return { standingDiff: prev ? prev.standingDiff : currentVal + 0.2, squatDiff: currentVal };
+            }
+        });
+    }, []);
+
+    const resetCalibration = useCallback(() => {
+        setCalibrationData(null);
+    }, []);
+
     return (
-        <RehabContext.Provider value={{ landmarks, metrics, setPoseData, registerCaptureFn, captureSnapshot, startSession, endSession }}>
+        <RehabContext.Provider value={{ landmarks, metrics, setPoseData, registerCaptureFn, captureSnapshot, startSession, endSession, calibrate, resetCalibration, calibrationData }}>
             {children}
         </RehabContext.Provider>
     );
