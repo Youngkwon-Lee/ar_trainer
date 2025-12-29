@@ -7,20 +7,54 @@ import { X, Check, ArrowDown, ArrowUp, Ruler } from "lucide-react";
 export default function CalibrationModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
     const { calibrate, resetCalibration, calibrationData, metrics } = useRehab();
     const [countDown, setCountDown] = useState<number | null>(null);
+    const [step, setStep] = useState<"INTRO" | "STAND" | "SQUAT" | "DONE">("INTRO");
 
     if (!isOpen) return null;
 
+    const playBeep = (freq = 440, duration = 100) => {
+        try {
+            const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+            if (!AudioContext) return;
+
+            const audioCtx = new AudioContext();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.frequency.value = freq;
+            oscillator.type = "sine";
+
+            oscillator.start();
+            setTimeout(() => {
+                oscillator.stop();
+                audioCtx.close();
+            }, duration);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     const startTimer = (onComplete: () => void) => {
-        let count = 5;
+        let count = 8; // Increased to 8 seconds
         setCountDown(count);
+        playBeep(600, 100); // Start beep
 
         const interval = setInterval(() => {
             count--;
             if (count > 0) {
                 setCountDown(count);
+                // Beep on last 3 seconds
+                if (count <= 3) playBeep(600, 100);
             } else {
                 clearInterval(interval);
                 setCountDown(null);
+
+                // Success Beep (Double High Pitch)
+                playBeep(1000, 150);
+                setTimeout(() => playBeep(1000, 300), 200);
+
                 onComplete();
             }
         }, 1000);
@@ -51,7 +85,8 @@ export default function CalibrationModal({ isOpen, onClose }: { isOpen: boolean;
             {countDown !== null && (
                 <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
                     <span className="text-9xl font-black text-white animate-pulse">{countDown}</span>
-                    <p className="text-2xl text-slate-300 mt-4">Get into position!</p>
+                    <p className="text-2xl text-slate-300 mt-4">Move into position!</p>
+                    <p className="text-lg text-emerald-400 mt-2">Wait for the BEEP sound 🔊</p>
                 </div>
             )}
 
@@ -98,14 +133,16 @@ export default function CalibrationModal({ isOpen, onClose }: { isOpen: boolean;
                             </div>
                             <h3 className="text-xl font-semibold text-white mb-2">Step 1: Stand Straight</h3>
                             <p className="text-slate-400 mb-6">
-                                Press start, then you have <strong>5 seconds</strong> to step back and stand straight.
+                                1. Press Start <br />
+                                2. Move back & Stand Straight <br />
+                                3. <strong>Wait for the "BEEP"</strong>
                             </p>
                             <button
                                 onClick={handleStand}
                                 disabled={countDown !== null}
                                 className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-lg transition disabled:opacity-50"
                             >
-                                {countDown ? "Get Ready..." : "Start 5s Timer"}
+                                {countDown ? "Timer Running..." : "Start 8s Timer"}
                             </button>
                             <div className="mt-4 text-xs text-slate-500">
                                 Current Diff: {metrics.rawDiff.toFixed(3)}
@@ -120,14 +157,16 @@ export default function CalibrationModal({ isOpen, onClose }: { isOpen: boolean;
                             </div>
                             <h3 className="text-xl font-semibold text-white mb-2">Step 2: Squat Down</h3>
                             <p className="text-slate-400 mb-6">
-                                Press start, then you have <strong>5 seconds</strong> to squat down and hold it.
+                                1. Press Start <br />
+                                2. Squat Down & Hold <br />
+                                3. <strong>Wait for the "BEEP"</strong>
                             </p>
                             <button
                                 onClick={handleSquat}
                                 disabled={countDown !== null}
                                 className="w-full py-4 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold text-lg transition disabled:opacity-50"
                             >
-                                {countDown ? "Get Ready..." : "Start 5s Timer"}
+                                {countDown ? "Timer Running..." : "Start 8s Timer"}
                             </button>
                             <div className="mt-4 text-xs text-slate-500">
                                 Current Diff: {metrics.rawDiff.toFixed(3)}
