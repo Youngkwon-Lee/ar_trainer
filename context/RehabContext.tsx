@@ -31,6 +31,8 @@ export interface RehabMetrics {
     // Debug metrics
     rawDiff: number;
     countingState: string;
+    lastRepQuality: "GOOD" | "BAD" | null;
+    currentRepErrors: string[];
     // Session State
     isSessionActive: boolean;
     sessionStats: SessionStats;
@@ -70,7 +72,10 @@ export function RehabProvider({ children }: { children: ReactNode }) {
         reps: 0,
         feedback: [],
         rawDiff: 0,
+        rawDiff: 0,
         countingState: "INIT",
+        lastRepQuality: null,
+        currentRepErrors: [],
         isSessionActive: false,
         sessionStats: {
             maxSquatDepth: 0,
@@ -170,15 +175,38 @@ export function RehabProvider({ children }: { children: ReactNode }) {
             // Adjusted Thresholds: Stand < 65 (User avg ~53)
             let increment = 0;
             let currentCountingState = wasSquattingRef.current ? "DOWN" : "UP";
+            let lastRepQuality = prev.lastRepQuality; // Persist previous quality
+            const newFeedback = [...feedbackMessages]; // Current frame feedback
 
             if (!wasSquattingRef.current && squatDepth > 65) {
+                // START SQUAT (DOWN)
                 wasSquattingRef.current = true;
                 currentCountingState = "DOWN";
+                // Reset error tracking for this new rep
+                prev.currentRepErrors = [];
             } else if (wasSquattingRef.current && squatDepth < 65) {
+                // FINISH SQUAT (UP) -> Count Rep
                 wasSquattingRef.current = false;
                 currentCountingState = "UP";
                 increment = 1;
-                // console.log("!!! REP COUNTED !!!"); // Explicit log for counting
+
+                // Determine Quality
+                const hadErrors = prev.currentRepErrors.length > 0;
+                lastRepQuality = hadErrors ? "BAD" : "GOOD";
+
+                // Show Result Feedback (Temporary Override)
+                if (!hadErrors) {
+                    newFeedback.push("PERFECT FORM! ⭐");
+                } else {
+                    newFeedback.push("WATCH FORM ⚠️");
+                }
+            }
+
+            // Accomulate Errors during DOWN state
+            if (wasSquattingRef.current) {
+                feedbackMessages.forEach(msg => {
+                    if (!prev.currentRepErrors.includes(msg)) prev.currentRepErrors.push(msg);
+                });
             }
 
             // SINGLE State Update
@@ -189,10 +217,12 @@ export function RehabProvider({ children }: { children: ReactNode }) {
                 isGoodForm: feedbackMessages.length === 0,
                 actionLabel,
                 reps: prev.reps + increment,
-                feedback: feedbackMessages,
+                feedback: newFeedback,
                 rawDiff: diff,
                 countingState: currentCountingState,
                 isSessionActive: prev.isSessionActive,
+                lastRepQuality: lastRepQuality, // Expose quality
+                currentRepErrors: prev.currentRepErrors, // Persist errors for this rep
                 sessionStats: {
                     ...prev.sessionStats,
                     maxSquatDepth: prev.isSessionActive ? Math.max(prev.sessionStats.maxSquatDepth, squatDepth) : prev.sessionStats.maxSquatDepth,
