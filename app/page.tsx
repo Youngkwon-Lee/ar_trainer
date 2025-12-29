@@ -1,15 +1,19 @@
 "use client";
 
+import { useRef, useEffect, useState } from "react";
+import { Activity, Heart, Battery, Wifi, Database } from "lucide-react";
 import { HUDContainer } from "@/components/smart-glass/HUDContainer";
 import { VideoFeed } from "@/components/smart-glass/VideoFeed";
 import { MovementAnalysis } from "@/components/smart-glass/MovementAnalysis";
 import { ActionClassification } from "@/components/smart-glass/ActionClassification";
 import { AQADisplay } from "@/components/smart-glass/AQADisplay";
-import { RecordingControls } from "@/components/smart-glass/RecordingControls";
+import RecordingControls from "@/components/smart-glass/RecordingControls";
+import RomGauge from "@/components/smart-glass/RomGauge";
 import { RehabProvider, useRehab } from "@/context/RehabContext";
 
 function SmartGlassInterface() {
   const { metrics } = useRehab();
+  const { countingState, reps } = metrics;
 
   return (
     <main className="relative min-h-screen">
@@ -46,32 +50,39 @@ function SmartGlassInterface() {
             <AQADisplay />
           </div>
 
-          {/* Right: Additional Context */}
-          <div className="flex flex-col items-end gap-2 text-right">
-            <div className="bg-black/40 backdrop-blur-md border border-cyan-500/30 p-4 rounded-xl w-64">
-              <h3 className="text-cyan-400 text-xs font-bold uppercase tracking-widest mb-2">Metrics</h3>
-              <div className="flex justify-between text-sm text-white">
-                <span className="text-cyan-200/70">Repetitions</span>
-                <span className="font-mono text-xl text-cyan-400 font-bold">{metrics.reps}</span>
+          {/* Right Column: Metrics & Controls */}
+          <div className="flex flex-col gap-4">
+            {/* Metrics Panel */}
+            <div className="bg-slate-900/60 border border-slate-700 p-5 rounded-2xl backdrop-blur-md shadow-lg">
+              <h2 className="text-slate-400 text-sm font-semibold mb-3 uppercase tracking-wider flex items-center gap-2">
+                <Activity className="w-4 h-4" /> Real-time Analysis
+              </h2>
+
+              {/* ROM Gauge */}
+              <div className="flex justify-center mb-6 pt-2">
+                <RomGauge />
               </div>
-              <div className="w-full h-[1px] bg-cyan-500/20 my-2" />
-              <div className="flex justify-between text-sm text-white">
-                <span className="text-cyan-200/70">Squat Depth</span>
-                <span className="font-mono text-xl text-yellow-400">{metrics.squatDepth.toFixed(0)}</span>
-              </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span className="text-yellow-400">Raw: {metrics.rawDiff?.toFixed(3)}</span>
-                <span className="text-red-400">State: {metrics.countingState}</span>
-              </div>
-              <div className="w-full h-[1px] bg-cyan-500/20 my-2" />
-              <div className="flex justify-between text-sm text-white">
-                <span className="text-cyan-200/70">Target</span>
-                <span className="font-mono text-xl">15</span>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
+                  <span className="text-slate-500 text-xs block mb-1">State</span>
+                  <span className={`text-lg font-bold ${countingState === "DOWN" ? "text-emerald-400" : "text-white"}`}>
+                    {countingState}
+                  </span>
+                </div>
+                {/* Reps Visualization */}
+                <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 flex flex-col justify-between">
+                  <span className="text-slate-500 text-xs">Total Reps</span>
+                  <span className="text-3xl font-bold text-white self-end">{reps}</span>
+                </div>
               </div>
             </div>
 
-            {/* Recording Controls */}
-            <div className="mt-4">
+            {/* Recording & Session Controls */}
+            <div className="bg-slate-900/60 border border-slate-700 p-5 rounded-2xl backdrop-blur-md shadow-lg">
+              <h2 className="text-slate-400 text-sm font-semibold mb-3 uppercase tracking-wider flex items-center gap-2">
+                <Database className="w-4 h-4" /> Session Manager
+              </h2>
               <RecordingControls />
             </div>
           </div>

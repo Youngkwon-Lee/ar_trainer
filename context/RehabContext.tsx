@@ -10,6 +10,16 @@ export interface Landmark {
     visibility?: number;
 }
 
+// Expert Feature: Session Statistics
+export interface SessionStats {
+    maxSquatDepth: number;
+    minSquatDepth: number; // For "standing" consistency
+    totalReps: number;
+    startTime: number | null;
+    endTime: number | null;
+    romHistory: number[]; // Store peak ROMs per rep?? Or just max. Let's keep it simple: just Max.
+}
+
 export interface RehabMetrics {
     kneeFlexionLeft: number;
     kneeFlexionRight: number;
@@ -21,6 +31,9 @@ export interface RehabMetrics {
     // Debug metrics
     rawDiff: number;
     countingState: string;
+    // Session State
+    isSessionActive: boolean;
+    sessionStats: SessionStats;
 }
 
 interface RehabContextType {
@@ -29,6 +42,8 @@ interface RehabContextType {
     setPoseData: (landmarks: Landmark[]) => void;
     registerCaptureFn: (fn: () => void) => void;
     captureSnapshot: () => void;
+    startSession: () => void;
+    endSession: () => void;
 }
 
 const RehabContext = createContext<RehabContextType | undefined>(undefined);
@@ -53,7 +68,16 @@ export function RehabProvider({ children }: { children: ReactNode }) {
         reps: 0,
         feedback: [],
         rawDiff: 0,
-        countingState: "INIT"
+        countingState: "INIT",
+        isSessionActive: false,
+        sessionStats: {
+            maxSquatDepth: 0,
+            minSquatDepth: 0,
+            totalReps: 0,
+            startTime: null,
+            endTime: null,
+            romHistory: []
+        }
     });
 
     // State for counting
@@ -136,7 +160,15 @@ export function RehabProvider({ children }: { children: ReactNode }) {
                 reps: prev.reps + increment,
                 feedback: feedbackMessages,
                 rawDiff: diff,
-                countingState: currentCountingState
+                countingState: currentCountingState,
+                isSessionActive: prev.isSessionActive,
+                sessionStats: {
+                    ...prev.sessionStats,
+                    maxSquatDepth: prev.isSessionActive ? Math.max(prev.sessionStats.maxSquatDepth, squatDepth) : prev.sessionStats.maxSquatDepth,
+                    totalReps: prev.isSessionActive ? prev.reps + increment : prev.reps // Actually, let's decouple session reps from total global reps? 
+                    // For now, let's just tracking global reps is fine, or reset reps on session start?
+                    // User probably wants to start fresh count on session start.
+                }
             }));
         }
     }, []);
@@ -146,15 +178,39 @@ export function RehabProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const captureSnapshot = useCallback(() => {
-        if (captureFnRef.current) {
-            captureFnRef.current();
-        } else {
-            console.warn("No capture function registered");
-        }
+        if (captureFnRef.current) captureFnRef.current();
+    }, []);
+
+    const startSession = useCallback(() => {
+        setMetrics(prev => ({
+            ...prev,
+            reps: 0, // Reset Reps
+            isSessionActive: true,
+            sessionStats: {
+                maxSquatDepth: 0,
+                minSquatDepth: 100, // Start high
+                totalReps: 0,
+                startTime: Date.now(),
+                endTime: null,
+                romHistory: []
+            }
+        }));
+    }, []);
+
+    const endSession = useCallback(() => {
+        setMetrics(prev => ({
+            ...prev,
+            isSessionActive: false,
+            sessionStats: {
+                ...prev.sessionStats,
+                endTime: Date.now(),
+                totalReps: prev.reps // Save final reps
+            }
+        }));
     }, []);
 
     return (
-        <RehabContext.Provider value={{ landmarks, metrics, setPoseData, registerCaptureFn, captureSnapshot }}>
+        <RehabContext.Provider value={{ landmarks, metrics, setPoseData, registerCaptureFn, captureSnapshot, startSession, endSession }}>
             {children}
         </RehabContext.Provider>
     );
