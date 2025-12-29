@@ -363,7 +363,7 @@ export function RehabProvider({ children, exercise = 'SQUAT' }: { children: Reac
     }, []);
 
     return (
-        <RehabContext.Provider value={{ landmarks, metrics, setPoseData, registerCaptureFn, captureSnapshot, startSession, endSession, calibrate, resetCalibration, calibrationData }}>
+        <RehabContext.Provider value={{ landmarks, metrics, exerciseType, setPoseData, registerCaptureFn, captureSnapshot, startSession, endSession, calibrate, resetCalibration, calibrationData }}>
             {children}
         </RehabContext.Provider>
     );
